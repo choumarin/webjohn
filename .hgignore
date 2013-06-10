@@ -1,0 +1,10 @@
+syntax: glob
+*~
+john*
+sessions*
+dicts*
+_*
+
+
+syntax: regexp
+
