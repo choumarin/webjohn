@@ -15,18 +15,23 @@ $stats = $john->getStats();
 <head>
 	<title>WebJohn</title>
 	<script src="http://code.jquery.com/jquery-latest.js"></script>
+	
 	<link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
 	<script src="bootstrap/js/bootstrap.min.js"></script>
     <script src="http://twitter.github.com/bootstrap/assets/js/bootstrap-tab.js"></script>
+	
 	<script src="http://www.kunalbabre.com/projects/table2CSV.js"></script> 
+	
 	<script language="javascript" type="text/javascript" src="jqplot/jquery.jqplot.min.js"></script>
 	<script class="include" language="javascript" type="text/javascript" src="jqplot/plugins/jqplot.pieRenderer.min.js"></script>
 	<script class="include" language="javascript" type="text/javascript" src="jqplot/plugins/jqplot.donutRenderer.min.js"></script>
-	
 	<script src="jqplot/plugins/jqplot.categoryAxisRenderer.js" language="javascript" type="text/javascript" ></script>
 	<script src="jqplot/plugins/jqplot.dateAxisRenderer.js" language="javascript" type="text/javascript" ></script>
 	<script src="jqplot/plugins/jqplot.barRenderer.js" language="javascript" type="text/javascript" ></script>
 	<script src="jqplot/plugins/jqplot.pointLabels.js" language="javascript" type="text/javascript" ></script>
+	<script src="jqplot/plugins/jqplot.highlighter.js" language="javascript" type="text/javascript" ></script>
+ 
+    <!--<script type="text/javascript" src="https://www.google.com/jsapi"></script>-->
 
 	<link rel="stylesheet" type="text/css" href="jqplot/jquery.jqplot.css" />
 	<script>
@@ -47,6 +52,10 @@ $stats = $john->getStats();
 	<div class="navbar navbar-inverse">
 		<div class="navbar-inner">
 			<a class="brand" href="#">WebJohn</a>
+			<ul class="nav">
+			  <li><a href="index.php">Home</a></li>
+			  <li><a href="controlpannel.php">Control Pannel</a></li>
+			</ul>
 		</div>
 	</div>
 	<div class="container">
@@ -60,40 +69,111 @@ $stats = $john->getStats();
 		 
 		<div class="tab-content">
 		  <div class="tab-pane active" id="summary">
-			<!--<h4>Summary of session <?php print $john->session_name; ?></h4>-->
-				<script>
-				$(document).ready(function(){
-					var data = [
-						['Cracked', <?php print $stats['nbCracked']; ?>],['Not Cracked', <?php print $stats['nbNotCracked']; ?>]
-					];
-					var plot1 = jQuery.jqplot ('piePctCracked', [data], 
-						{ 
-							title: 'Summary of cracking', 
-							seriesColors: ['red', '#32CD32'],
-							seriesDefaults: {
-								// Make this a pie chart.
-								renderer: jQuery.jqplot.PieRenderer, 
-								rendererOptions: {
-									// Put data labels on the pie slices.
-									// By default, labels show the percentage of the slice.
-									showDataLabels: true
-								}
-							}, 
-							grid: {
-								drawGridLines: true,        // wether to draw lines across the grid or not.
-									gridLineColor: '#00000000',   // CSS color spec of the grid lines.
-									background: 'transparent',      // CSS color spec for background color of grid.
-									borderColor: '#00000000',     // CSS color spec for border around grid.
-									borderWidth: 0,           // pixel width of border around grid.
-									shadow: false,               // draw a shadow for grid.
-							}, 														
-							legend: { show:true, location: 'e' }
-						}
-					);
-				});	
-				</script>
-				<div id="piePctCracked" style="height:300px;width:600px; "></div>
-				
+			<div class="row">
+					<script>
+					$(document).ready(function(){
+						var data = [
+							['Cracked', <?php print $stats['nbCracked']; ?>],['Not Cracked', <?php print $stats['nbNotCracked']; ?>]
+						];
+						var plot1 = jQuery.jqplot ('piePctCracked', [data], 
+							{ 
+								title: 'Summary of cracking', 
+								seriesColors: ['#FF2800', '#00BB3F'],
+								seriesDefaults: {
+									renderer: jQuery.jqplot.PieRenderer, 
+									rendererOptions: {
+										startAngle: 90,
+										sliceMargin: 2,
+										showDataLabels: true,
+										shadow: false,
+									},
+								}, 
+								highlighter: {
+								  show: false,
+								},
+								grid: {
+									drawGridLines: true,        // wether to draw lines across the grid or not.
+										gridLineColor: '#00000000',   // CSS color spec of the grid lines.
+										background: 'transparent',      // CSS color spec for background color of grid.
+										borderColor: '#00000000',     // CSS color spec for border around grid.
+										borderWidth: 0,           // pixel width of border around grid.
+										shadow: false,               // draw a shadow for grid.
+								}, 														
+								legend: {
+									show:true,
+									location: 'e',
+									border: 'none',
+								},
+							}
+						);
+						$('.jqplot-data-label').css('color','white'); 
+						$('.jqplot-table-legend-swatch-outline').css('border','none');
+					});	
+					</script>
+					<!--
+		<script type="text/javascript">
+		  google.load("visualization", "1", {packages:["corechart"]});
+		  google.setOnLoadCallback(drawChart);
+		  function drawChart() {
+			var data = google.visualization.arrayToDataTable([
+				['Status', 'Number'],
+				['Cracked', <?php print $stats['nbCracked']; ?>],
+				['Not Cracked', <?php print $stats['nbNotCracked']; ?>],
+			]);
+
+			var options = {
+				colors: ['red', '#32CD32'],
+				title: 'Summary of password cracking',
+			};
+
+			var chart = new google.visualization.PieChart(document.getElementById('piePctCracked'));
+			chart.draw(data, options);
+		  }
+		</script>-->
+					<div id="piePctCracked" class="span4" style="height:300px;width:400px; "></div>
+					<script>
+					$(document).ready(function(){
+						var data = [
+							['Compliant', <?php print $stats['checkPolicy']['true']; ?>],['Not compliant', <?php print $stats['checkPolicy']['false']; ?>]
+						];
+						var plot1 = jQuery.jqplot ('piePctPolicy', [data], 
+							{ 
+								title: 'Password policy compliance', 
+								seriesColors: ['#00BB3F', '#FF2800'],
+								seriesDefaults: {
+									renderer: jQuery.jqplot.PieRenderer, 
+									rendererOptions: {
+										startAngle: 90,
+										sliceMargin: 2,
+										showDataLabels: true,
+										shadow: false,
+									}
+								}, 
+								highlighter: {
+								  show: false,
+								},
+								grid: {
+									drawGridLines: true,        // wether to draw lines across the grid or not.
+										gridLineColor: '#00000000',   // CSS color spec of the grid lines.
+										background: 'transparent',      // CSS color spec for background color of grid.
+										borderColor: '#00000000',     // CSS color spec for border around grid.
+										borderWidth: 0,           // pixel width of border around grid.
+										shadow: false,               // draw a shadow for grid.
+								}, 														
+								legend: {
+									show:true,
+									location: 'e',
+									border: 'none',
+								},
+							}
+						);
+						$('.jqplot-data-label').css('color','white'); 
+						$('.jqplot-table-legend-swatch-outline').css('border','none');
+					});	
+					</script>
+					<div id="piePctPolicy" class="span4" style="height:300px;width:400px; "></div>
+				</div>
+				<div class="row">
 				<script>
 				$(document).ready(function(){        
 					$.jqplot.config.enablePlugins = true;     
@@ -101,12 +181,17 @@ $stats = $john->getStats();
 						printf("[%d, '%s'],", $cnt, str_replace("'", "\\'", $pass));
 					} ?>]], {
 						title: 'Top 20 passwords', 
+						seriesColors:['#1533AD	'],
 						seriesDefaults:{
 							renderer:$.jqplot.BarRenderer,
 								rendererOptions: {
 								barDirection: 'horizontal',
 								barWidth:5,
+								shadow: false,
 							}
+						},
+						highlighter: {
+						  show: false,
 						},
 						axes: {
 							yaxis: {
@@ -135,8 +220,53 @@ $stats = $john->getStats();
 					});
 				});
 				</script>
-
-				<div id="top20" style="height:400px;width:600px; "></div>				
+					<div id="top20" class="span12" style="height:400px;width:600px; "></div>
+				</div>
+				<div class="row">
+					<script>
+					$(document).ready(function(){
+						var s1 = [<?php foreach($stats['passLen'] as $len => $cnt){
+							printf("[%d, %d],", $len, $cnt);
+						} ?>];
+						var plot1 = $.jqplot('passLen', [s1], {
+							title: "Password length distribution",
+							seriesDefaults:{
+								renderer:$.jqplot.BarRenderer,
+								rendererOptions: {fillToZero: true},
+								shadow: false,
+							},
+							highlighter: {
+							  show: false,
+							},
+							seriesColors:['#1533AD'],
+							legend: {
+								show: false,
+							},
+							axes: {
+								xaxis: {
+									renderer: $.jqplot.CategoryAxisRenderer,
+									tickOptions:{
+										showGridline:false, 
+										markSize:0
+									},
+								},
+								yaxis: {
+									pad: 1.10,
+									tickOptions: {formatString: '%d'},
+									min: 0,
+								}
+							},
+							grid: {
+								drawGridLines: false,        // wether to draw lines across the grid or not.
+								background: 'transparent',      // CSS color spec for background color of grid.
+								borderWidth: 0,           // pixel width of border around grid.
+								shadow: false,               // draw a shadow for grid.
+							}, 														
+						});
+					});
+					</script>
+					<div id="passLen" class="span12" style="height:400px;width:600px; "></div>					
+				</div>
 		  </div>
 		  <div class="tab-pane" id="results">
 		  

@@ -449,8 +449,37 @@ class johnSession extends bgProcess{
 		$cntPass = array_count_values($passArray);
 		arsort($cntPass);
 		$ret['top20'] = array_slice($cntPass, 0, 20);
+		unset($cntPass);
+		$lenArray = array_map(function($elem){
+				return strlen($elem['pass']);
+			},
+			$array_cracked);
+		$ret['passLen'] = array_count_values($lenArray);
+		$ret['checkPolicy'] = array_count_values(array_map(function($elem){
+				return checkPolicy($elem['pass']) ? 'true':'false';
+			},
+			$array_cracked));
+		if(!isset($ret['checkPolicy']['true']))
+			$ret['checkPolicy']['true'] = 0;
+		if(!isset($ret['checkPolicy']['false']))
+			$ret['checkPolicy']['false'] = 0;
 		return $ret;
 	}
+}
+
+function checkPolicy($pass, $len=8, $nbUp=1, $nbLow=1, $nbNum=1, $nbSpe=1, $specialsChars='/[^:alnum:]/'){
+	$matches = array();
+	if(strlen($pass)<$len)
+		return false;
+	if(preg_match_all("/[0-9]/", $pass, $matches)<$nbNum)
+		return false;
+	if(preg_match_all("/[A-Z]/", $pass, $matches)<$nbUp)
+		return false;
+	if(preg_match_all("/[a-z]/", $pass, $matches)<$nbLow)
+		return false;
+	if(preg_match_all($specialsChars, $pass, $matches)<$nbSpe)
+		return false;
+	return true;
 }
 
 ?>
