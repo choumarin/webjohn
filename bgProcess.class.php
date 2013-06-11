@@ -254,6 +254,7 @@ class johnSession extends bgProcess{
 		if (!empty($this->config['johnSession']['extraoptions'])){
 			$cmd = $cmd.' '.escapeshellarg($this->config['johnSession']['extraoptions']);
 		}
+		return $cmd;
 	}
 		
 	function start(){
@@ -323,7 +324,7 @@ class johnSession extends bgProcess{
 		$hashs = array();
 		foreach($output as $i => $line){
 			$matches = array();
-			if($this->config['johnSession']['format'] == 'nt' && preg_match('/^(.+):(.+):[A-Fa-f0-9]{32}:[A-Fa-f0-9]{32}:?.*$/', $line, $matches)){
+			if($this->config['johnSession']['format'] == 'nt' && preg_match('/^(.+):(.+):([A-Fa-f0-9]{32}|NO PASSWORD\*{21}):([A-Fa-f0-9]{32}|NO PASSWORD\*{21}):?.*$/', $line, $matches)){
 				$hashs[] = array(
 					'user' => $matches[1],
 					'hash' => '',
@@ -448,17 +449,36 @@ class johnSession extends bgProcess{
 			$array_cracked);
 		$cntPass = array_count_values($passArray);
 		arsort($cntPass);
-		$ret['top20'] = array_slice($cntPass, 0, 20);
+		$ret['top20'] = array_reverse(array_slice($cntPass, 0, 20));
 		unset($cntPass);
 		$lenArray = array_map(function($elem){
 				return strlen($elem['pass']);
 			},
 			$array_cracked);
 		$ret['passLen'] = array_count_values($lenArray);
-		$ret['checkPolicy'] = array_count_values(array_map(function($elem){
-				return checkPolicy($elem['pass']) ? 'true':'false';
-			},
-			$array_cracked));
+		
+		$tmpArray = array();
+		foreach($array_cracked as $key => $value){
+			if(isset($this->config['johnSession']['passpolicy'])){
+				if(checkPolicy($value['pass'], 
+					$this->config['johnSession']['passpolicy']['len'],
+					$this->config['johnSession']['passpolicy']['nbUp'],
+					$this->config['johnSession']['passpolicy']['nbLow'],
+					$this->config['johnSession']['passpolicy']['nbNum'],
+					$this->config['johnSession']['passpolicy']['nbSpe'],
+					$this->config['johnSession']['passpolicy']['minOutOf']
+					)){
+					$localret = 'true';
+				}else{
+					$localret = 'false';
+				}
+			}else{
+				$localret = checkPolicy($value['pass']) ? 'true':'false';
+			}
+			$tmpArray[$key] = $localret;
+		}
+				
+		$ret['checkPolicy'] = array_count_values($tmpArray);
 		if(!isset($ret['checkPolicy']['true']))
 			$ret['checkPolicy']['true'] = 0;
 		if(!isset($ret['checkPolicy']['false']))
@@ -467,17 +487,20 @@ class johnSession extends bgProcess{
 	}
 }
 
-function checkPolicy($pass, $len=8, $nbUp=1, $nbLow=1, $nbNum=1, $nbSpe=1, $specialsChars='/[^:alnum:]/'){
+function checkPolicy($pass, $len=8, $nbUp=1, $nbLow=1, $nbNum=1, $nbSpe=1, $minOutOf=3, $specialsChars='/[^a-zA-Z0-9]/'){
 	$matches = array();
+	$outOf = 0;
 	if(strlen($pass)<$len)
 		return false;
-	if(preg_match_all("/[0-9]/", $pass, $matches)<$nbNum)
-		return false;
-	if(preg_match_all("/[A-Z]/", $pass, $matches)<$nbUp)
-		return false;
-	if(preg_match_all("/[a-z]/", $pass, $matches)<$nbLow)
-		return false;
-	if(preg_match_all($specialsChars, $pass, $matches)<$nbSpe)
+	if(preg_match_all("/[0-9]/", $pass, $matches)>=$nbNum)
+		$outOf++;
+	if(preg_match_all("/[A-Z]/", $pass, $matches)>=$nbUp)
+		$outOf++;
+	if(preg_match_all("/[a-z]/", $pass, $matches)>=$nbLow)
+		$outOf++;
+	if(preg_match_all($specialsChars, $pass, $matches)>=$nbSpe)
+		$outOf++;
+	if($outOf<$minOutOf)
 		return false;
 	return true;
 }

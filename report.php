@@ -6,8 +6,36 @@ if (empty($_REQUEST['sessID'])){
 }
 
 $john = new johnSession($_REQUEST['sessID']);
-$stats = $john->getStats();
 
+$policy_len = 8;
+$policy_Upp = 1;
+$policy_Low = 1;
+$policy_Num = 1;
+$policy_Spe = 1;
+$policy_outOf = 3;
+
+if(isset($_POST['action']) && $_POST['action'] == 'update_policy'){
+	$passpolicy = array(
+		'len' => $_POST['policy_len'],
+		'nbUp' => $_POST['policy_Upp'],
+		'nbLow' => $_POST['policy_Low'],
+		'nbNum' => $_POST['policy_Num'],
+		'nbSpe' => $_POST['policy_Spe'],
+		'minOutOf' => $_POST['policy_outOf'],
+	);
+	$john->updateJohnConf(array('passpolicy' => $passpolicy));	
+}
+
+if(isset($john->config['johnSession']['passpolicy'])){
+	$policy_len = $john->config['johnSession']['passpolicy']['len'];
+	$policy_Upp = $john->config['johnSession']['passpolicy']['nbUp'];
+	$policy_Low = $john->config['johnSession']['passpolicy']['nbLow'];
+	$policy_Num = $john->config['johnSession']['passpolicy']['nbNum'];
+	$policy_Spe = $john->config['johnSession']['passpolicy']['nbSpe'];
+	$policy_outOf = $john->config['johnSession']['passpolicy']['minOutOf'];
+}
+
+$stats = $john->getStats();
 
 ?>
 <!DOCTYPE html>
@@ -70,15 +98,48 @@ $stats = $john->getStats();
 		<div class="tab-content">
 		  <div class="tab-pane active" id="summary">
 			<div class="row">
+				<div class="span12">
+					<legend>General information</legend>
+					<p><strong>Session ID</strong>: <?php print($john->config['sessID']);?></p>
+					<p><strong>Session Name</strong>: <?php print($john->session_name);?></p>
+					<p><strong>Dictionnary</strong>: 
+					<?php
+					if(isset($john->config['johnSession']['mode']) && $john->config['johnSession']['mode']=='dictionnary'){
+						print(securedString($john->config['johnSession']['dictionnary']));
+					?></p>
+					<p><strong>Rules</strong>: <?php
+						print(securedString($john->config['johnSession']['rules']));
+					}else{
+						print('None');
+					}?></p>
+					<p><strong>Total hash count</strong>: <?php print($stats['nbNotCracked']+$stats['nbCracked']);?></p>
+					<p><strong>Status</strong>: <?php print($john->status());?></p>
+				</div>
+			</div>
+			<div class="row">
+				<form class="form-inline span12" action="" method="post" enctype="multipart/form-data">
+					<legend>Password policy <button type="submit" class="btn btn-info btn-mini"><i class="icon-refresh icon-white"></i>&nbsp;Update</button></legend>
+					<label>Length:&nbsp;</label><input class="span1" type="text" name="policy_len" id="policy_len" value="<?php print(securedString($policy_len));?>">
+					<label>Uppercase:&nbsp;</label><input class="span1" type="text" name="policy_Upp" id="policy_Upp" value="<?php print(securedString($policy_Upp));?>">
+					<label>Lowercase:&nbsp;</label><input class="span1" type="text" name="policy_Low" id="policy_Low" value="<?php print(securedString($policy_Low));?>">
+					<label>Numbers:&nbsp;</label><input class="span1" type="text" name="policy_Num" id="policy_Num" value="<?php print(securedString($policy_Num));?>">
+					<label>Special chars.:&nbsp;</label><input class="span1" type="text" name="policy_Spe" id="policy_Spe" value="<?php print(securedString($policy_Spe));?>">
+					<label>Count of each:&nbsp;</label><input class="span1" type="text" name="policy_outOf" id="policy_outOf" value="<?php print(securedString($policy_outOf));?>">
+					<input type="hidden" name="action" value="update_policy">
+				</form>
+			</div>
+			<legend>Statistics</legend>
+			<div class="row">
 					<script>
 					$(document).ready(function(){
 						var data = [
-							['Cracked', <?php print $stats['nbCracked']; ?>],['Not Cracked', <?php print $stats['nbNotCracked']; ?>]
+							['Not Cracked', <?php print $stats['nbNotCracked']; ?>],['Cracked', <?php print $stats['nbCracked']; ?>]
 						];
+
 						var plot1 = jQuery.jqplot ('piePctCracked', [data], 
 							{ 
 								title: 'Summary of cracking', 
-								seriesColors: ['#FF2800', '#00BB3F'],
+								seriesColors: ['#00BB3F', '#FF2800'],
 								seriesDefaults: {
 									renderer: jQuery.jqplot.PieRenderer, 
 									rendererOptions: {
@@ -202,7 +263,7 @@ $stats = $john->getStats();
 								}
 							},
 							xaxis:{
-								ticks:[0,<?php print(reset($stats['top20'])*1.1); ?>],
+								ticks:[0,<?php print(end($stats['top20'])*1.1); ?>],
 								showTicks:false,
 								tickOptions:{
 									formatString:'%d',
@@ -251,7 +312,7 @@ $stats = $john->getStats();
 									},
 								},
 								yaxis: {
-									pad: 1.10,
+									pad: 1.15,
 									tickOptions: {formatString: '%d'},
 									min: 0,
 								}
@@ -308,6 +369,11 @@ $stats = $john->getStats();
 			$(this).tab('show');
 		})
 		</script>		
+	</div>
+	<div class="row">
+		&nbsp;
+		&nbsp;
+		&nbsp;
 	</div>
 
 </body>

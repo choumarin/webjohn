@@ -18,9 +18,10 @@ function session_begin($sessname, $hash, $format, $options, $mode, $dictionnary,
 	$john = new johnSession('', $format, $sessname, $options);
 	$hashfile = johnSession::SESSIONDIR.$john->session_name.'.hash';
 	$john->updateJohnConf(array('hashfile' => $hashfile));
+	$dicts = johnSession::getDicts();
 	if ($mode == 'dictionnary'){
 		$john->updateJohnConf(array('mode' => $mode));
-		$john->updateJohnConf(array('dictionnary' => $dictionnary));
+		$john->updateJohnConf(array('dictionnary' => $dicts[$dictionnary]));
 		$john->updateJohnConf(array('rules' => $rules));
 	}
 	//~ var_dump($hashfile);
