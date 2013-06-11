@@ -89,9 +89,23 @@ class bgProcess{
 
 			$return_value = proc_close($process);
 			$this->updateConf(array('ret' => $return_value));
+			
+			if($return_value == 0){
+				$this->onFinished();
+			}
+			
 		}else{
 			$this->updateConf(array('ret' => 255));
 		}
+	}
+	
+	function onFinished(){
+		//To be surclassed
+		return true;
+	}
+	function onStopped(){
+		//To be surclassed
+		return true;
 	}
 	
 	function isRunning(){
@@ -127,7 +141,7 @@ class bgProcess{
 		if ($ret_var){
 			//~ var_dump('here i am 2');
 			$this->updateConf(array('stopped' => true));
-			$this->updateConf(array('truc' => 'muche'));
+			$this->onStopped();
 		}
 		return $ret_var;
 	}
@@ -204,9 +218,11 @@ class bgProcess{
 
 class johnSession extends bgProcess{
 
-	const JOHN = '/tools/passwords/john-1.7.9-jumbo-7/run/john';
+	// const JOHN = '/tools/passwords/john-1.7.9-jumbo-7/run/john';
+	const JOHN = '/var/www/webjohn/john/run/john';
 	//~ const JOHN = '/var/www/webjohn/john-1.8.0/run/john';
-	const DICTDIR = '/tools/dicts/';
+	// const DICTDIR = '/tools/dicts/';
+	const DICTDIR = '/var/www/webjohn/dicts/';
 	
 	public $session_name;
 	
@@ -245,6 +261,22 @@ class johnSession extends bgProcess{
 		//~ print_r($this->session_name);
 	}
 	
+	function onFinished(){
+		$this->buildCache();
+	}
+
+	function onStopped(){
+		$this->buildCache();
+	}
+	
+	function buildCache(){
+		$this->updateJohnConf(array(
+			'cache' => array(	'stats' => $this->getStats(true),
+								'cracked' => $this->listCracked(true),
+			),
+		));
+	}
+	
 	private function makeCmd(){
 		$cmd = self::JOHN.' '.escapeshellarg($this->config['johnSession']['hashfile']).' --session='.escapeshellarg($this->session_name).' --format='.escapeshellarg($this->config['johnSession']['format']);
 		if ($this->config['johnSession']['mode'] == 'dictionnary'){
@@ -280,7 +312,7 @@ class johnSession extends bgProcess{
 		return $this->launchBg();
 	}
 	
-	function getHashs(){
+	function XgetHashs(){ //Fixme to be removed
 		$hashs = array();
 		$lines = file($this->config['johnSession']['hashfile']);
 		foreach($lines as $line){
@@ -295,7 +327,7 @@ class johnSession extends bgProcess{
 		return $hashs;
 	}	
 	
-	static function getDicts(){
+	static function getDicts($forceUpdate=false){
 		$files = glob(self::DICTDIR.'*.dic');
 		$ret = array();
 		foreach ($files as $file){
@@ -304,7 +336,7 @@ class johnSession extends bgProcess{
 		return $ret;
 	}
 	
-	static function getRules(){
+	static function getRules($forceUpdate=false){
 		$ret = array();
 		$conf_file = dirname(self::JOHN).'/john.conf';
 		var_dump($conf_file);
@@ -318,14 +350,17 @@ class johnSession extends bgProcess{
 		return $ret;
 	}
 	
-	function listCracked(){
+	function listCracked($forceUpdate=false){
+		if (!$forceUpdate && isset($this->config['johnSession']['cache']['cracked'])){
+			return $this->config['johnSession']['cache']['cracked'];
+		}
 		$cmd = self::JOHN.' '.escapeshellarg($this->config['johnSession']['hashfile']).' --show --format='.escapeshellarg($this->config['johnSession']['format']);
 		exec($cmd, $output);
 		// $output = implode(' ', $output);
 		$hashs = array();
 		foreach($output as $i => $line){
 			$matches = array();
-			if($this->config['johnSession']['format'] == 'nt' && preg_match('/^(.+):(.*):([A-Fa-f0-9]{32}|NO PASSWORD\*{21}):([A-Fa-f0-9]{32}|NO PASSWORD\*{21}):?.*$/', $line, $matches)){
+			if($this->config['johnSession']['format'] == 'nt' && preg_match('/^([^:]+):(.*):([A-Fa-f0-9]{32}|NO PASSWORD\*{21}):([A-Fa-f0-9]{32}|NO PASSWORD\*{21}):?.*$/', $line, $matches)){
 				$hashs[] = array(
 					'user' => $matches[1],
 					'hash' => '',
@@ -333,7 +368,7 @@ class johnSession extends bgProcess{
 					'cracked' => true,
 				);
 			}
-			elseif($this->config['johnSession']['format'] == 'lm' && preg_match('/^(.+):(.*):([A-Fa-f0-9]{32}|NO PASSWORD\*{21}):([A-Fa-f0-9]{32}|NO PASSWORD\*{21}):?.*$/', $line, $matches)){
+			elseif($this->config['johnSession']['format'] == 'lm' && preg_match('/^([^:]+):(.*):([A-Fa-f0-9]{32}|NO PASSWORD\*{21}):([A-Fa-f0-9]{32}|NO PASSWORD\*{21}):?.*$/', $line, $matches)){
 				$hashs[] = array(
 					'user' => $matches[1],
 					'hash' => '',
@@ -341,7 +376,7 @@ class johnSession extends bgProcess{
 					'cracked' => true,
 				);
 			}
-			elseif($this->config['johnSession']['format'] == 'sybasease' && preg_match('/^(.+):(.*)::.*$/', $line, $matches)){
+			elseif($this->config['johnSession']['format'] == 'sybasease' && preg_match('/^([^:]+):(.*)::.*$/', $line, $matches)){
 				$hashs[] = array(
 					'user' => $matches[1],
 					'hash' => '',
@@ -379,6 +414,9 @@ class johnSession extends bgProcess{
 		//~ var_dump($hashsLeft);
 		$res = array_merge($hashs, $hashsLeft);
 		//~ var_dump($hashs, $hashsLeft, $res);
+		$this->updateJohnConf(array(
+			'cache' => array('cracked' => $res),
+		));		
 		return $res;
 	}
 	
@@ -410,7 +448,7 @@ class johnSession extends bgProcess{
 		return $output;
 	}
 
-	static function getFormats(){
+	static function getFormats($forceUpdate=false){
 		exec(self::JOHN, $output);
 		//~ var_dump($output);
 		$formats=array();
@@ -444,9 +482,12 @@ class johnSession extends bgProcess{
 		return FALSE;
 	}
 	
-	function getStats(){
+	function getStats($forceUpdate=false){
+		if (!$forceUpdate && isset($this->config['johnSession']['cache']['stats'])){
+			return $this->config['johnSession']['cache']['stats'];
+		}
 		$ret = array();
-		$results = $this->listCracked();
+		$results = $this->listCracked($forceUpdate);
 		$array_cracked = array_filter($results, function ($var){
 				return($var['cracked']);
 			});
@@ -492,6 +533,9 @@ class johnSession extends bgProcess{
 			$ret['checkPolicy']['true'] = 0;
 		if(!isset($ret['checkPolicy']['false']))
 			$ret['checkPolicy']['false'] = 0;
+		$this->updateJohnConf(array(
+			'cache' => array('stats' => $ret),
+		));		
 		return $ret;
 	}
 }

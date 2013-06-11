@@ -15,15 +15,25 @@ $policy_Spe = 1;
 $policy_outOf = 3;
 
 if(isset($_POST['action']) && $_POST['action'] == 'update_policy'){
-	$passpolicy = array(
-		'len' => $_POST['policy_len'],
-		'nbUp' => $_POST['policy_Upp'],
-		'nbLow' => $_POST['policy_Low'],
-		'nbNum' => $_POST['policy_Num'],
-		'nbSpe' => $_POST['policy_Spe'],
-		'minOutOf' => $_POST['policy_outOf'],
-	);
-	$john->updateJohnConf(array('passpolicy' => $passpolicy));	
+	$filter_res = 
+		filter_input(INPUT_POST, 'policy_len', FILTER_VALIDATE_INT) &&
+		filter_input(INPUT_POST, 'policy_Upp', FILTER_VALIDATE_INT) &&
+		filter_input(INPUT_POST, 'policy_Low', FILTER_VALIDATE_INT) &&
+		filter_input(INPUT_POST, 'policy_Num', FILTER_VALIDATE_INT) &&
+		filter_input(INPUT_POST, 'policy_Spe', FILTER_VALIDATE_INT) &&
+		filter_input(INPUT_POST, 'policy_outOf', FILTER_VALIDATE_INT);
+	
+	if($filter_res){
+		$passpolicy = array(
+			'len' => $_POST['policy_len'],
+			'nbUp' => $_POST['policy_Upp'],
+			'nbLow' => $_POST['policy_Low'],
+			'nbNum' => $_POST['policy_Num'],
+			'nbSpe' => $_POST['policy_Spe'],
+			'minOutOf' => $_POST['policy_outOf'],
+		);
+		$john->updateJohnConf(array('passpolicy' => $passpolicy));	
+	}
 }
 
 if(isset($john->config['johnSession']['passpolicy'])){
@@ -118,16 +128,16 @@ $stats = $john->getStats();
 			</div>
 			<div class="row">
 				<form class="form-inline span12" action="" method="post" enctype="multipart/form-data">
-					<legend>Password policy <button type="submit" class="btn btn-info btn-mini"><i class="icon-refresh icon-white"></i>&nbsp;Update</button></legend>
-					<label>Length:&nbsp;</label><input class="span1" type="text" name="policy_len" id="policy_len" value="<?php print(securedString($policy_len));?>">
-					<label>Uppercase:&nbsp;</label><input class="span1" type="text" name="policy_Upp" id="policy_Upp" value="<?php print(securedString($policy_Upp));?>">
-					<label>Lowercase:&nbsp;</label><input class="span1" type="text" name="policy_Low" id="policy_Low" value="<?php print(securedString($policy_Low));?>">
-					<label>Numbers:&nbsp;</label><input class="span1" type="text" name="policy_Num" id="policy_Num" value="<?php print(securedString($policy_Num));?>">
-					<label>Special chars.:&nbsp;</label><input class="span1" type="text" name="policy_Spe" id="policy_Spe" value="<?php print(securedString($policy_Spe));?>">
-					<label>Count of each:&nbsp;</label><input class="span1" type="text" name="policy_outOf" id="policy_outOf" value="<?php print(securedString($policy_outOf));?>">
+					<legend>Password policy <button type="submit" class="btn btn-info btn-mini" data-loading-text="Updating..."><i class="icon-refresh icon-white"></i>&nbsp;Update</button></legend>
+					<label>Length:&nbsp;</label><input class="span1" type="text" name="policy_len" id="policy_len" pattern="[0-9]+" value="<?php print(securedString($policy_len));?>" required>
+					<label>Uppercase:&nbsp;</label><input class="span1" type="text" name="policy_Upp" id="policy_Upp" pattern="[0-9]+" value="<?php print(securedString($policy_Upp));?>" required>
+					<label>Lowercase:&nbsp;</label><input class="span1" type="text" name="policy_Low" id="policy_Low" pattern="[0-9]+" value="<?php print(securedString($policy_Low));?>" required>
+					<label>Numbers:&nbsp;</label><input class="span1" type="text" name="policy_Num" id="policy_Num" pattern="[0-9]+" value="<?php print(securedString($policy_Num));?>" required>
+					<label>Special chars.:&nbsp;</label><input class="span1" type="text" name="policy_Spe" id="policy_Spe" pattern="[0-9]+" value="<?php print(securedString($policy_Spe));?>" required>
+					<label>Count of each:&nbsp;</label><input class="span1" type="text" name="policy_outOf" id="policy_outOf" pattern="[0-9]+" value="<?php print(securedString($policy_outOf));?>" required>
 					<input type="hidden" name="action" value="update_policy">
 				</form>
-			</div>
+				</div>
 			<legend>Statistics</legend>
 			<div class="row">
 					<script>
