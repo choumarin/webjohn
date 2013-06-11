@@ -247,7 +247,7 @@ $stats = $john->getStats();
 							renderer:$.jqplot.BarRenderer,
 								rendererOptions: {
 								barDirection: 'horizontal',
-								barWidth:5,
+								barMargin:5,
 								shadow: false,
 							}
 						},

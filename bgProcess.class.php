@@ -204,9 +204,9 @@ class bgProcess{
 
 class johnSession extends bgProcess{
 
-	const JOHN = '/var/www/webjohn/john/run/john';
+	const JOHN = '/tools/passwords/john-1.7.9-jumbo-7/run/john';
 	//~ const JOHN = '/var/www/webjohn/john-1.8.0/run/john';
-	const DICTDIR = '/var/www/webjohn/dicts/';
+	const DICTDIR = '/tools/dicts/';
 	
 	public $session_name;
 	
@@ -307,6 +307,7 @@ class johnSession extends bgProcess{
 	static function getRules(){
 		$ret = array();
 		$conf_file = dirname(self::JOHN).'/john.conf';
+		var_dump($conf_file);
 		$file = file($conf_file);
 		foreach($file as $line){
 			$matches = array();
@@ -324,29 +325,37 @@ class johnSession extends bgProcess{
 		$hashs = array();
 		foreach($output as $i => $line){
 			$matches = array();
-			if($this->config['johnSession']['format'] == 'nt' && preg_match('/^(.+):(.+):([A-Fa-f0-9]{32}|NO PASSWORD\*{21}):([A-Fa-f0-9]{32}|NO PASSWORD\*{21}):?.*$/', $line, $matches)){
+			if($this->config['johnSession']['format'] == 'nt' && preg_match('/^(.+):(.*):([A-Fa-f0-9]{32}|NO PASSWORD\*{21}):([A-Fa-f0-9]{32}|NO PASSWORD\*{21}):?.*$/', $line, $matches)){
 				$hashs[] = array(
 					'user' => $matches[1],
 					'hash' => '',
-					'pass' => $matches[2],
+					'pass' => $matches[2] == '' ? '**empty**' : $matches[2],
 					'cracked' => true,
 				);
 			}
-			elseif($this->config['johnSession']['format'] == 'sybasease' && preg_match('/^(.+):(.+)::.*$/', $line, $matches)){
+			elseif($this->config['johnSession']['format'] == 'lm' && preg_match('/^(.+):(.*):([A-Fa-f0-9]{32}|NO PASSWORD\*{21}):([A-Fa-f0-9]{32}|NO PASSWORD\*{21}):?.*$/', $line, $matches)){
 				$hashs[] = array(
 					'user' => $matches[1],
 					'hash' => '',
-					'pass' => $matches[2],
+					'pass' => $matches[2] == '' ? '**empty**' : $matches[2],
 					'cracked' => true,
 				);
 			}
-			elseif(preg_match('/^.+:.+$/', $line)){
+			elseif($this->config['johnSession']['format'] == 'sybasease' && preg_match('/^(.+):(.*)::.*$/', $line, $matches)){
+				$hashs[] = array(
+					'user' => $matches[1],
+					'hash' => '',
+					'pass' => $matches[2] == '' ? '**empty**' : $matches[2],
+					'cracked' => true,
+				);
+			}
+			elseif(preg_match('/^.+:.*$/', $line)){
 				//~ var_dump($line);
 				$s = explode(':', $line, 2); // Hopefully, noone has ':' in its username ...
 				$hashs[] = array(
 					'user' => $s[0],
 					'hash' => '',
-					'pass' => $s[1],
+					'pass' => $s[1] == '' ? '**empty**' : $s[1],
 					'cracked' => true,
 				);
 			}

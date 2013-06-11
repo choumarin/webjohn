@@ -4,7 +4,10 @@ john*
 sessions*
 dicts*
 _*
-
+*.err
+*.out
+*.log
+*.conf.php
 
 syntax: regexp
 
