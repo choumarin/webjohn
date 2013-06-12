@@ -12,19 +12,27 @@ foreach($_GET as $key => $value){
 include('bgProcess.class.php');
 
 function session_begin($sessname, $hash, $format, $options, $mode, $dictionnary, $rules){
-	if (preg_match('/^[a-zA-Z0-9]*$/', $sessname) === 0){
+	if (preg_match('/^[a-zA-Z0-9\-_]*$/', $sessname) === 0){
 		die ('Session name must be [a-zA-Z0-9]*');  
 	}
 	$john = new johnSession('', $format, $sessname, $options);
 	$hashfile = CONST_SESSIONDIR.$john->session_name.'.hash';
 	$john->updateJohnConf(array('hashfile' => $hashfile));
 	$dicts = johnSession::getDicts();
-	if ($mode == 'dictionnary'){
+	if ($mode == 'brute'){
+		$john->updateJohnConf(array('mode' => $mode));
+	}
+	elseif ($mode == 'dictionnary'){
 		$john->updateJohnConf(array('mode' => $mode));
 		$john->updateJohnConf(array('dictionnary' => $dicts[$dictionnary]));
 		$john->updateJohnConf(array('rules' => $rules));
 	}
 	//~ var_dump($hashfile);
+	$a = explode("\n", $hash);
+	foreach($a as $i => $line){
+		$a[$i] = rtrim($line, ':');
+	}
+	$hash = implode("\n", $a);
 	file_put_contents($hashfile,$hash);
 	$john->start();
 }

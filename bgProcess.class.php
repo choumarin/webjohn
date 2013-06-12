@@ -273,11 +273,8 @@ class johnSession extends bgProcess{
 	}
 	
 	function buildCache(){
-		$this->updateJohnConf(array(
-			'cache' => array(	'stats' => $this->getStats(true),
-								'cracked' => $this->listCracked(true),
-			),
-		));
+		$this->getStats(true);
+		$this->status(true);
 	}
 	
 	private function makeCmd(){
@@ -340,6 +337,10 @@ class johnSession extends bgProcess{
 	}
 	
 	static function getRules($forceUpdate=false){
+		$geninfo = new GeneralInfoManager();
+		if (!$forceUpdate && $geninfo->exists('rules')){
+			return $geninfo->get('rules');
+		}		
 		$ret = array();
 		$conf_file = dirname(CONST_JOHN).'/john.conf';
 		//~ var_dump($conf_file);
@@ -350,13 +351,14 @@ class johnSession extends bgProcess{
 				$ret[]=$matches[1];
 			}
 		}
+		$geninfo->set('rules', $ret);
 		return $ret;
 	}
 	
 	function listCracked($forceUpdate=false){
-		if (!$forceUpdate && isset($this->config['johnSession']['cache']['cracked'])){
-			return $this->config['johnSession']['cache']['cracked'];
-		}
+		//~ if (!$forceUpdate && isset($this->config['johnSession']['cache_cracked'])){
+			//~ return $this->config['johnSession']['cache_cracked'];
+		//~ }
 		$cmd = CONST_JOHN.' '.escapeshellarg($this->config['johnSession']['hashfile']).' --show --format='.escapeshellarg($this->config['johnSession']['format']);
 		exec($cmd, $output);
 		// $output = implode(' ', $output);
@@ -417,16 +419,16 @@ class johnSession extends bgProcess{
 		//~ var_dump($hashsLeft);
 		$res = array_merge($hashs, $hashsLeft);
 		//~ var_dump($hashs, $hashsLeft, $res);
-		$this->updateJohnConf(array(
-			'cache' => array('cracked' => $res),
-		));		
+		//~ $this->updateJohnConf(array(
+			//~ 'cache_cracked' => $res,
+		//~ ));		
 		return $res;
 	}
 	
 	function listHashs(){
 	}
 	
-	function status(){
+	function status($forceUpdate=false){
 		$output = 'unknown';
 		//~ print_r($this->session_name);
 		//~ var_dump(parent::status());
@@ -438,20 +440,37 @@ class johnSession extends bgProcess{
 				$output = 'Running : '.implode(' ', $output);
 				break;
 			case 'stopped':
+				if (!$forceUpdate && isset($this->config['johnSession']['cache_status'])){
+					return $this->config['johnSession']['cache_status'];
+				}			
 				$short_status = exec(CONST_JOHN.' '.escapeshellarg($this->config['johnSession']['hashfile']).' --show --format='.escapeshellarg($this->config['johnSession']['format']));
 				$output = 'Stopped: '.$short_status ;
+				$this->updateJohnConf(array(
+					'cache_status' => $output,
+				));		
 				break;
 			case 'error':
 				$output = sprintf('Error (%d): %s',escapeshellarg($this->config['ret']), escapeshellarg($this->printErr())) ; 
 				break;
 			case 'finished':
+				if (!$forceUpdate && isset($this->config['johnSession']['cache_status'])){
+					return $this->config['johnSession']['cache_status'];
+				}
 				$short_status = exec(CONST_JOHN.' '.escapeshellarg($this->config['johnSession']['hashfile']).' --show --format='.escapeshellarg($this->config['johnSession']['format']));
 				$output = 'Finished: '.$short_status;
+				$this->updateJohnConf(array(
+					'cache_status' => $output,
+				));		
+
 		}
 		return $output;
 	}
 
 	static function getFormats($forceUpdate=false){
+		$geninfo = new GeneralInfoManager();
+		if (!$forceUpdate && $geninfo->exists('formats')){
+			return $geninfo->get('formats');
+		}		
 		exec(CONST_JOHN, $output);
 		//~ var_dump($output);
 		$formats=array();
@@ -475,6 +494,7 @@ class johnSession extends bgProcess{
 			//~ $sep = '/';
 		}
 		$formats = explode($sep, $matches[1]);
+		$geninfo->set('formats', $formats);
 		return $formats;  
 	}
 	
@@ -486,8 +506,8 @@ class johnSession extends bgProcess{
 	}
 	
 	function getStats($forceUpdate=false){
-		if (!$forceUpdate && isset($this->config['johnSession']['cache']['stats'])){
-			return $this->config['johnSession']['cache']['stats'];
+		if (!$forceUpdate && isset($this->config['johnSession']['cache_stats'])){
+			return $this->config['johnSession']['cache_stats'];
 		}
 		$ret = array();
 		$results = $this->listCracked($forceUpdate);
@@ -537,7 +557,7 @@ class johnSession extends bgProcess{
 		if(!isset($ret['checkPolicy']['false']))
 			$ret['checkPolicy']['false'] = 0;
 		$this->updateJohnConf(array(
-			'cache' => array('stats' => $ret),
+			'cache_stats' => $ret,
 		));		
 		return $ret;
 	}
@@ -561,4 +581,33 @@ function checkPolicy($pass, $len=8, $nbUp=1, $nbLow=1, $nbNum=1, $nbSpe=1, $minO
 	return true;
 }
 
+class GeneralInfoManager{
+	
+	private $infos = array();
+		
+	function __construct(){
+		if(!file_exists(CONST_GENINFOFILE)){
+			file_put_contents(CONST_GENINFOFILE, '<?php return '.var_export($this->infos, true).';');
+		}
+		//~ if (($this->infos = include(CONST_GENINFOFILE)) === false){
+			//~ throw new Exception('No valid general information file could be loaded (check config).');
+		//~ }
+		$this->infos = include(CONST_GENINFOFILE);
+	}
+	function get($var){
+		return $this->infos[$var];
+	}
+	function getAll(){
+		return $this->infos;
+	}
+	function exists($var){
+		return isset($this->infos[$var]);
+	}
+	function set($var, $value){
+		$this->infos[$var] = $value;
+		$res = file_put_contents(CONST_GENINFOFILE, '<?php return '.var_export($this->infos, true).';');
+		//~ var_dump($this->infos, $res);
+		return $res;
+	}
+}
 ?>
