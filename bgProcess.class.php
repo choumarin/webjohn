@@ -339,7 +339,7 @@ class johnSession extends bgProcess{
 	static function getRules($forceUpdate=false){
 		$ret = array();
 		$conf_file = dirname(self::JOHN).'/john.conf';
-		var_dump($conf_file);
+		//~ var_dump($conf_file);
 		$file = file($conf_file);
 		foreach($file as $line){
 			$matches = array();

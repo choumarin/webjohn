@@ -110,7 +110,7 @@ if (isset($_FILES['file'])){
 		</div>
 	</div>
 	<div class="container">
-		<form class="form-inline" action="<?php print($_SERVER['PHP_SELF']); ?>" method="post" enctype="multipart/form-data">
+		<form class="form-inline" action="<?php print($_SERVER['SCRIPT_NAME']); ?>" method="post" enctype="multipart/form-data">
 		<h5>Dictionnary upload</h5>
 		<ul>
 			<li>Allowed extentions are : <?php print(implode(', ', $allowedExts)) ?></p>

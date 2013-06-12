@@ -178,10 +178,10 @@ foreach(list_sessions() as $sessid){
 		print ' style="display: none"';
 	}
 	print '><i class="icon-refresh"></i> Update</button>';
-	//~ print '&nbsp;<a data-remote="'.$_SERVER['PHP_SELF'].'?json=0&action=show&sessionid='.$sessid.'" data-target="#showRes" role="button" class="btn btn-small" data-toggle="modal"><i class="icon-list"></i> Results</a>';
+	//~ print '&nbsp;<a data-remote="'.$_SERVER['SCRIPT_NAME'].'?json=0&action=show&sessionid='.$sessid.'" data-target="#showRes" role="button" class="btn btn-small" data-toggle="modal"><i class="icon-list"></i> Results</a>';
 	print '&nbsp;<a href="report.php?sessID='.$sessid.'" role="button" class="btn btn-small"><i class="icon-list"></i> Results</a>';
 	if (!$john->isRunning()){
-		print '&nbsp;<a href="'.$_SERVER['PHP_SELF'].'?action=delete&sessionid='.$sessid.'" role="button" class="btn btn-small btn-danger"><i class="icon-remove icon-white"></i> Delete</a>';
+		print '&nbsp;<a href="'.$_SERVER['SCRIPT_NAME'].'?action=delete&sessionid='.$sessid.'" role="button" class="btn btn-small btn-danger"><i class="icon-remove icon-white"></i> Delete</a>';
 	}
 	print '</td>';
 	print '</tr>';  
@@ -194,7 +194,7 @@ foreach(list_sessions() as $sessid){
 	<div class="container">
 		<button type="button" class="btn btn-large btn-primary" data-toggle="collapse" data-target="#add_hashs"><i class="icon-stop icon-plus icon-white"></i> Add session</button>
 		<div id="add_hashs" class="collapse">
-			<form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="POST">
+			<form action="<?php $_SERVER['SCRIPT_NAME']; ?>" method="POST">
 				<div class="row">
 					<div class="span12">
 						<textarea placeholder="Hashes ..." class="span12" name="hashes" id="hashes" rows="10" required></textarea>
@@ -313,7 +313,7 @@ foreach(list_sessions() as $sessid){
 		function session_update(sessionid, btn){
 			$('#status_'+sessionid).html('updating...');
 			postdata = { json: "1", action: "status", 'sessionid': sessionid };
-			$.post('<?php echo $_SERVER['PHP_SELF']; ?>',
+			$.post('<?php echo $_SERVER['SCRIPT_NAME']; ?>',
 				postdata,
 				function(data){
 					btn.button('reset');
@@ -325,7 +325,7 @@ foreach(list_sessions() as $sessid){
 		
 		function session_stop(sessionid, btn){
 			postdata = { json: "1", action: "stop", 'sessionid': sessionid };
-			$.post('<?php echo $_SERVER['PHP_SELF']; ?>',
+			$.post('<?php echo $_SERVER['SCRIPT_NAME']; ?>',
 				postdata,
 				function(data){
 					btn.button('reset');
@@ -346,7 +346,7 @@ foreach(list_sessions() as $sessid){
 		
 		function session_start(sessionid, btn){
 			postdata = { json: "1", action: "resume", 'sessionid': sessionid };
-			$.post('<?php echo $_SERVER['PHP_SELF']; ?>',
+			$.post('<?php echo $_SERVER['SCRIPT_NAME']; ?>',
 				postdata,
 				function(data){
 					btn.button('reset');
@@ -359,7 +359,7 @@ foreach(list_sessions() as $sessid){
 						$('#update_'+sessionid).show();
 						$('#status_'+sessionid).html('updating...');
 						postdata = { json: "1", action: "status", 'sessionid': sessionid };
-						$.post('<?php echo $_SERVER['PHP_SELF']; ?>',
+						$.post('<?php echo $_SERVER['SCRIPT_NAME']; ?>',
 							postdata,
 							function(data){
 								json = $.parseJSON(data);
