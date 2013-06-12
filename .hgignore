@@ -8,6 +8,7 @@ _*
 *.out
 *.log
 *.conf.php
+config.php
 
 syntax: regexp
 

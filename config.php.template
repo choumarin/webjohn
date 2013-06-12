@@ -1,0 +1,15 @@
+<?php
+
+// General Info
+define('CONST_GENINFOFILE', '');
+
+// Background process
+define('CONST_SESSIONDIR', '');
+define('CONST_SESSIONEXT', '');
+
+// John
+define('CONST_JOHN', '');
+define('CONST_DICTDIR', '');
+
+
+?>
