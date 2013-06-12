@@ -16,7 +16,7 @@ function session_begin($sessname, $hash, $format, $options, $mode, $dictionnary,
 		die ('Session name must be [a-zA-Z0-9]*');  
 	}
 	$john = new johnSession('', $format, $sessname, $options);
-	$hashfile = johnSession::SESSIONDIR.$john->session_name.'.hash';
+	$hashfile = CONST_SESSIONDIR.$john->session_name.'.hash';
 	$john->updateJohnConf(array('hashfile' => $hashfile));
 	$dicts = johnSession::getDicts();
 	if ($mode == 'dictionnary'){
@@ -35,12 +35,9 @@ function session_isalive ( $sessid ){
 }
 
 function list_sessions (){
-	$list_sessions = array();
-	foreach (glob(johnSession::SESSIONDIR.'*'.johnSession::SESSIONEXT) as $filename) {
-		array_push($list_sessions, basename($filename,johnSession::SESSIONEXT));
-	}
-	//~ var_dump($list_sessions);
-	return $list_sessions;
+	$a = johnSession::getSessions();
+	//~ var_dump($a);
+	return $a;
 }
 
 function session_delete ($sessid){ 
@@ -160,7 +157,10 @@ if (!empty($_POST['json']) && $_POST['json']=1){
 
 
 foreach(list_sessions() as $sessid){
+	//~ var_dump($sessid);
+
 	$john = new johnSession($sessid);
+	//~ var_dump($john);
 	print '<tr>';
 	print '<td>'.$john->session_name.'</td>';
 	print '<td id="status_'.$sessid.'">';

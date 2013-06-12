@@ -1,19 +1,20 @@
 <?php
 
+include('config.php');
+
 function securedString($str){
 	// var_dump($str == htmlspecialchars($str, ENT_QUOTES));
 	return htmlspecialchars($str, ENT_QUOTES);
 }
 
 class bgProcess{
-	
-	const SESSIONDIR = '/var/www/webjohn/sessions/';
-	const SESSIONEXT = '.conf.php';
-	
+		
 	public $config = array();
 		
 	function __construct(){
-		@mkdir(self::SESSIONDIR,0755,true);
+		if (!file_exists(CONST_SESSIONDIR)) {
+			mkdir(CONST_SESSIONDIR,0755,true);
+		}		
 		$argv = func_get_args();
 		switch( func_num_args() ) {
 			case 0:
@@ -27,15 +28,15 @@ class bgProcess{
 	function constructNew(){
 		$sessID = uniqid();
 		$this->config['sessID'] = $sessID;
-		$this->config['outfile'] = self::SESSIONDIR.$sessID.'.out';
-		$this->config['errfile'] = self::SESSIONDIR.$sessID.'.err';
+		$this->config['outfile'] = CONST_SESSIONDIR.$sessID.'.out';
+		$this->config['errfile'] = CONST_SESSIONDIR.$sessID.'.err';
 		//~ $arr['stopped'] = false;
 		$this->saveConf();
 	}
 	
 	function updateConf($arr){
 		//~ var_dump($this->config);
-		$this->config = include(self::SESSIONDIR.$this->config['sessID'].self::SESSIONEXT);
+		$this->config = include(CONST_SESSIONDIR.$this->config['sessID'].CONST_SESSIONEXT);
 		foreach($arr as $key => $val){
 			$this->config[$key]=$val;
 		}
@@ -44,11 +45,11 @@ class bgProcess{
 	}
 
 	function saveConf(){
-		file_put_contents(self::SESSIONDIR.$this->config['sessID'].self::SESSIONEXT, '<?php return '.var_export($this->config, true).';');
+		file_put_contents(CONST_SESSIONDIR.$this->config['sessID'].CONST_SESSIONEXT, '<?php return '.var_export($this->config, true).';');
 	}	
 	
 	function constructFromConf($conf){
-		if (($this->config = include(self::SESSIONDIR.$conf.self::SESSIONEXT)) === false){
+		if (($this->config = include(CONST_SESSIONDIR.$conf.CONST_SESSIONEXT)) === false){
 			throw new Exception('No valid config file could be loaded.');
 		}
 	}
@@ -74,7 +75,7 @@ class bgProcess{
 		   2 => array('file', $this->config['errfile'], 'a') // stderr est un fichier
 		);
 
-		$process = proc_open($this->config['command'], $descriptorspec, $pipes, self::SESSIONDIR);
+		$process = proc_open($this->config['command'], $descriptorspec, $pipes, CONST_SESSIONDIR);
 
 		if (is_resource($process)) {
 			
@@ -209,7 +210,7 @@ class bgProcess{
 		if (!$this->isRunning()){
 			$succ = unlink($this->config['outfile']) && 
 					unlink($this->config['errfile']) &&
-					unlink(self::SESSIONDIR.$this->config['sessID'].self::SESSIONEXT);
+					unlink(CONST_SESSIONDIR.$this->config['sessID'].CONST_SESSIONEXT);
 		}
 		return $succ;
 	}
@@ -217,12 +218,6 @@ class bgProcess{
 }
 
 class johnSession extends bgProcess{
-
-	// const JOHN = '/tools/passwords/john-1.7.9-jumbo-7/run/john';
-	const JOHN = '/var/www/webjohn/john/run/john';
-	//~ const JOHN = '/var/www/webjohn/john-1.8.0/run/john';
-	// const DICTDIR = '/tools/dicts/';
-	const DICTDIR = '/var/www/webjohn/dicts/';
 	
 	public $session_name;
 	
@@ -256,11 +251,19 @@ class johnSession extends bgProcess{
 	}
 	
 	function constructFromConfJohnSession($conf){
-		$this->config = include(self::SESSIONDIR.$conf.self::SESSIONEXT);
+		//~ $this->config = include(CONST_SESSIONDIR.$conf.CONST_SESSIONEXT);
 		$this->session_name = $this->config['sessID'].'-'.$this->config['johnSession']['sessionname'];
 		//~ print_r($this->session_name);
 	}
 	
+	static function getSessions(){
+		$list_sessions = array();
+		foreach (glob(CONST_SESSIONDIR.'*'.CONST_SESSIONEXT) as $filename) {
+			array_push($list_sessions, basename($filename,CONST_SESSIONEXT));
+		}
+		return $list_sessions;
+	}
+
 	function onFinished(){
 		$this->buildCache();
 	}
@@ -278,9 +281,9 @@ class johnSession extends bgProcess{
 	}
 	
 	private function makeCmd(){
-		$cmd = self::JOHN.' '.escapeshellarg($this->config['johnSession']['hashfile']).' --session='.escapeshellarg($this->session_name).' --format='.escapeshellarg($this->config['johnSession']['format']);
+		$cmd = CONST_JOHN.' '.escapeshellarg($this->config['johnSession']['hashfile']).' --session='.escapeshellarg($this->session_name).' --format='.escapeshellarg($this->config['johnSession']['format']);
 		if ($this->config['johnSession']['mode'] == 'dictionnary'){
-			$dictionnaryfile = self::DICTDIR.$this->config['johnSession']['dictionnary'].'.dic';
+			$dictionnaryfile = CONST_DICTDIR.$this->config['johnSession']['dictionnary'].'.dic';
 			$cmd = $cmd.' --wordlist='.escapeshellarg($dictionnaryfile).' --rules='.escapeshellarg($this->config['johnSession']['rules']);
 		}
 		if (!empty($this->config['johnSession']['extraoptions'])){
@@ -295,7 +298,7 @@ class johnSession extends bgProcess{
 	}
 	
 	function updateJohnConf($arr){
-		$this->config = include(self::SESSIONDIR.$this->config['sessID'].self::SESSIONEXT);
+		$this->config = include(CONST_SESSIONDIR.$this->config['sessID'].CONST_SESSIONEXT);
 		foreach($arr as $key => $val){
 			$this->config['johnSession'][$key]=$val;
 		}
@@ -307,7 +310,7 @@ class johnSession extends bgProcess{
 	}
 	
 	function resume(){
-		$cmd = self::JOHN.' --restore='.escapeshellarg($this->session_name);
+		$cmd = CONST_JOHN.' --restore='.escapeshellarg($this->session_name);
 		$this->setCmd($cmd);
 		return $this->launchBg();
 	}
@@ -328,7 +331,7 @@ class johnSession extends bgProcess{
 	}	
 	
 	static function getDicts($forceUpdate=false){
-		$files = glob(self::DICTDIR.'*.dic');
+		$files = glob(CONST_DICTDIR.'*.dic');
 		$ret = array();
 		foreach ($files as $file){
 			$ret[] = basename($file, '.dic');
@@ -338,7 +341,7 @@ class johnSession extends bgProcess{
 	
 	static function getRules($forceUpdate=false){
 		$ret = array();
-		$conf_file = dirname(self::JOHN).'/john.conf';
+		$conf_file = dirname(CONST_JOHN).'/john.conf';
 		//~ var_dump($conf_file);
 		$file = file($conf_file);
 		foreach($file as $line){
@@ -354,7 +357,7 @@ class johnSession extends bgProcess{
 		if (!$forceUpdate && isset($this->config['johnSession']['cache']['cracked'])){
 			return $this->config['johnSession']['cache']['cracked'];
 		}
-		$cmd = self::JOHN.' '.escapeshellarg($this->config['johnSession']['hashfile']).' --show --format='.escapeshellarg($this->config['johnSession']['format']);
+		$cmd = CONST_JOHN.' '.escapeshellarg($this->config['johnSession']['hashfile']).' --show --format='.escapeshellarg($this->config['johnSession']['format']);
 		exec($cmd, $output);
 		// $output = implode(' ', $output);
 		$hashs = array();
@@ -396,7 +399,7 @@ class johnSession extends bgProcess{
 			}
 		}
 		unset($output);
-		$cmd = self::JOHN.' '.escapeshellarg($this->config['johnSession']['hashfile']).' --show=LEFT --format='.escapeshellarg($this->config['johnSession']['format']);
+		$cmd = CONST_JOHN.' '.escapeshellarg($this->config['johnSession']['hashfile']).' --show=LEFT --format='.escapeshellarg($this->config['johnSession']['format']);
 		exec($cmd, $output);
 		$hashsLeft = array();
 		foreach($output as $i => $line){
@@ -429,27 +432,27 @@ class johnSession extends bgProcess{
 		//~ var_dump(parent::status());
 		switch (parent::status()){
 			case 'running':
-				$cmd = self::JOHN.' --status='.escapeshellarg($this->session_name).' 2>&1';
+				$cmd = CONST_JOHN.' --status='.escapeshellarg($this->session_name).' 2>&1';
 				//~ print_r($cmd);
-				exec('cd '.self::SESSIONDIR.' && '.$cmd, $output);
+				exec('cd '.CONST_SESSIONDIR.' && '.$cmd, $output);
 				$output = 'Running : '.implode(' ', $output);
 				break;
 			case 'stopped':
-				$short_status = exec(self::JOHN.' '.escapeshellarg($this->config['johnSession']['hashfile']).' --show --format='.escapeshellarg($this->config['johnSession']['format']));
+				$short_status = exec(CONST_JOHN.' '.escapeshellarg($this->config['johnSession']['hashfile']).' --show --format='.escapeshellarg($this->config['johnSession']['format']));
 				$output = 'Stopped: '.$short_status ;
 				break;
 			case 'error':
 				$output = sprintf('Error (%d): %s',escapeshellarg($this->config['ret']), escapeshellarg($this->printErr())) ; 
 				break;
 			case 'finished':
-				$short_status = exec(self::JOHN.' '.escapeshellarg($this->config['johnSession']['hashfile']).' --show --format='.escapeshellarg($this->config['johnSession']['format']));
+				$short_status = exec(CONST_JOHN.' '.escapeshellarg($this->config['johnSession']['hashfile']).' --show --format='.escapeshellarg($this->config['johnSession']['format']));
 				$output = 'Finished: '.$short_status;
 		}
 		return $output;
 	}
 
 	static function getFormats($forceUpdate=false){
-		exec(self::JOHN, $output);
+		exec(CONST_JOHN, $output);
 		//~ var_dump($output);
 		$formats=array();
 		$i = 0;
