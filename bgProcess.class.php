@@ -432,19 +432,33 @@ class johnSession extends bgProcess{
 		$output = 'unknown';
 		//~ print_r($this->session_name);
 		//~ var_dump(parent::status());
+                $stats = $this->getStats($forceUpdate);
+                if ($stats['nbCracked']+$stats['nbNotCracked'] == 0){
+                    $ministats = 'No hashs loaded (wrong format ?)';
+                }else{
+                    $ministats = sprintf('%d hash(s) cracked out of %d (%.0f%%)', $stats['nbCracked'], $stats['nbCracked']+$stats['nbNotCracked'],  $stats['nbCracked']*100/($stats['nbCracked']+$stats['nbNotCracked']));
+                }
 		switch (parent::status()){
 			case 'running':
+                                $stats = $this->getStats(true);
+                                if ($stats['nbCracked']+$stats['nbNotCracked'] == 0){
+                                    $ministats = 'No hashs loaded (wrong format ?)';
+                                }else{
+                                    $ministats = sprintf('%d hash(s) cracked out of %d (%.0f%%)', $stats['nbCracked'], $stats['nbCracked']+$stats['nbNotCracked'],  $stats['nbCracked']*100/($stats['nbCracked']+$stats['nbNotCracked']));
+                                }
 				$cmd = CONST_JOHN.' --status='.escapeshellarg($this->session_name).' 2>&1';
 				//~ print_r($cmd);
 				exec('cd '.CONST_SESSIONDIR.' && '.$cmd, $output);
-				$output = 'Running : '.implode(' ', $output);
+				$output = 'Running: '.implode(' ', $output);
+                                $output = preg_replace('/guesses: [0-9]+/', $ministats, $output);
 				break;
 			case 'stopped':
 				if (!$forceUpdate && isset($this->config['johnSession']['cache_status'])){
 					return $this->config['johnSession']['cache_status'];
-				}			
-				$short_status = exec(CONST_JOHN.' '.escapeshellarg($this->config['johnSession']['hashfile']).' --show --format='.escapeshellarg($this->config['johnSession']['format']));
-				$output = 'Stopped: '.$short_status ;
+				}
+                                $stats = $this->getStats($forceUpdate);
+//				$short_status = exec(CONST_JOHN.' '.escapeshellarg($this->config['johnSession']['hashfile']).' --show --format='.escapeshellarg($this->config['johnSession']['format']));
+				$output = 'Stopped: '.$ministats;
 				$this->updateJohnConf(array(
 					'cache_status' => $output,
 				));		
@@ -456,8 +470,8 @@ class johnSession extends bgProcess{
 				if (!$forceUpdate && isset($this->config['johnSession']['cache_status'])){
 					return $this->config['johnSession']['cache_status'];
 				}
-				$short_status = exec(CONST_JOHN.' '.escapeshellarg($this->config['johnSession']['hashfile']).' --show --format='.escapeshellarg($this->config['johnSession']['format']));
-				$output = 'Finished: '.$short_status;
+//				$short_status = exec(CONST_JOHN.' '.escapeshellarg($this->config['johnSession']['hashfile']).' --show --format='.escapeshellarg($this->config['johnSession']['format']));
+				$output = 'Finished: '.$ministats;
 				$this->updateJohnConf(array(
 					'cache_status' => $output,
 				));		
