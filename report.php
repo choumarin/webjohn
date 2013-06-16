@@ -84,7 +84,7 @@ $stats = $john->getStats();
 				window.location.href = 'data:text/csv;charset=UTF-8,'+ encodeURIComponent(csv);
 			});
 		});
-	})
+	});
 	</script>
 </head>
 <body>
@@ -351,13 +351,13 @@ $stats = $john->getStats();
 				<tbody>
 					<?php
 					// var_dump($result);
-					//~ foreach ($john->listCracked() as $data){
-						//~ print '<tr>';
-						//~ print '<td>'.securedString($data['user']).'</td>';
-						//~ print '<td>'.securedString($data['hash']).'</td>';
-						//~ print '<td>'.securedString($data['pass']).'</td>';
-						//~ print '</tr>';
-					//~ }
+					foreach ($john->listCracked() as $data){
+						print '<tr>';
+						print '<td>'.securedString($data['user']).'</td>';
+						print '<td>'.securedString($data['hash']).'</td>';
+						print '<td>'.securedString($data['pass']).'</td>';
+						print '</tr>';
+					}
 					?>
 				</tbody>    
 			</table>
@@ -365,12 +365,12 @@ $stats = $john->getStats();
 		  </div>
 		  <div class="tab-pane" id="output">
 			<?php
-				//~ print(nl2br(securedString($john->printOut())));
+				print(nl2br(securedString($john->printOut())));
 			?>
 		  </div>
 		  <div class="tab-pane" id="error">
 			<?php
-				//~ print(nl2br(securedString($john->printErr())));
+                                print(nl2br(securedString($john->printErr())));
 			?>
 		  </div>
 		</div>
@@ -378,7 +378,7 @@ $stats = $john->getStats();
 		$('#myTab a').click(function(e) {
 			e.preventDefault();
 			$(this).tab('show');
-		})
+		});
 		</script>		
 	</div>
 	<div class="row">

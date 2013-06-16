@@ -1,14 +1,19 @@
 <?php
 
 // General Info
+//define('CONST_GENINFOFILE', '_generalinfos.php');
 define('CONST_GENINFOFILE', '');
 
 // Background process
+//define('CONST_SESSIONDIR', '/var/www/webjohn/sessions/');
 define('CONST_SESSIONDIR', '');
+//define('CONST_SESSIONEXT', '.conf.php');
 define('CONST_SESSIONEXT', '');
 
 // John
+//define('CONST_JOHN', '/var/www/webjohn/john/run/john');
 define('CONST_JOHN', '');
+//define('CONST_DICTDIR', '/var/www/webjohn/dicts/');
 define('CONST_DICTDIR', '');
 
 
